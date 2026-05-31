@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "842702836095",
+    "project_id": "uj-isms",
+    "storage_bucket": "uj-isms.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:842702836095:android:b54152cab6e55a55074a4a",
+        "android_client_info": {
+          "package_name": "com.example.ujISMS"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfQgowE38wIQpIEX8Mnhn4C_MDoL4L3WI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
