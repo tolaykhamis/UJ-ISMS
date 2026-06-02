@@ -1,4 +1,4 @@
-// lib/screens/admin/activity_log_screen.dart
+// screens/admin/activity_log_screen.dart
 import 'package:flutter/material.dart';
 import '../../services/firestore_service.dart';
 import '../../models/models.dart';

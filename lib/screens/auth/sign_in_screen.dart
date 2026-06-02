@@ -1,12 +1,14 @@
 // screens/auth/sign_in_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/auth_service.dart';
 import '../../constants/app_colors.dart';
 import '../../widgets/app_widgets.dart';
 import '../../providers/user_provider.dart';
 import '../../uj_isms.dart';
 import 'sign_up_screen.dart';
+import 'forget_password.dart'; 
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -56,9 +58,37 @@ class _SignInScreenState extends State<SignInScreen> {
           MaterialPageRoute(builder: (_) => const UjIsmsShell()),
           (route) => false,
         );
+      } else if (mounted) {
+        setState(() => _errorMessage = 'No user profile found in database.');
       }
+    } on FirebaseAuthException catch (e) {
+      String msg;
+      switch (e.code) {
+        case 'invalid-credential':
+        case 'wrong-password':
+        case 'user-not-found':
+          msg = 'Incorrect email or password.';
+          break;
+        case 'invalid-email':
+          msg = 'Invalid email format.';
+          break;
+        case 'user-disabled':
+          msg = 'This account has been disabled.';
+          break;
+        case 'too-many-requests':
+          msg = 'Too many attempts. Try again later.';
+          break;
+        case 'network-request-failed':
+          msg = 'No internet connection.';
+          break;
+        default:
+          msg = 'Auth error: ${e.code} — ${e.message}';
+      }
+      setState(() => _errorMessage = msg);
+      debugPrint('🔥 FirebaseAuthException: ${e.code} - ${e.message}');
     } catch (e) {
-      setState(() => _errorMessage = 'Incorrect email or password. Please try again.');
+      setState(() => _errorMessage = 'Error: $e');
+      debugPrint('🔥 Sign-in error: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -180,7 +210,32 @@ class _SignInScreenState extends State<SignInScreen> {
                               () => _obscurePassword = !_obscurePassword),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      // ─── FORGOT PASSWORD BUTTON ──────────────────────────
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) =>
+                                      const ForgetPasswordScreen()),
+                            );
+                          },
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text('Forgot Password?',
+                              style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       _isLoading
                           ? const CircularProgressIndicator()
                           : GradientButton(

@@ -1,4 +1,4 @@
-// lib/models/request_model.dart
+// models/request_model.dart
 // Matches the "requests" Firestore collection
 
 class RequestModel {
@@ -75,4 +75,13 @@ class RequestModel {
       'seen': seen,
     };
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is RequestModel && other.requestId == requestId;
+  }
+
+  @override
+  int get hashCode => requestId.hashCode;
 }

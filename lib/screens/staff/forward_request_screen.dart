@@ -46,28 +46,48 @@ class _ForwardRequestScreenState extends State<ForwardRequestScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'UJ ISMS',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 2.8,
-                    color: AppColors.secondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Forward Request',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Redirect to another staff member',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: const Icon(
+                        Icons.arrow_back_ios,
+                        size: 20,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'UJ ISMS',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2.8,
+                              color: AppColors.secondary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Forward Request',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Redirect to another staff member',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -293,6 +313,7 @@ class _ForwardRequestScreenState extends State<ForwardRequestScreen> {
         newStaffId: _selectedStaffId!,
         newStaffName: _selectedStaffName ?? '',
         reason: _reason.trim(),
+        currentStaffName: user.name,
       );
       if (mounted) {
         _showSnack('Request forwarded successfully!');
@@ -323,3 +344,4 @@ class _ForwardRequestScreenState extends State<ForwardRequestScreen> {
     );
   }
 }
+

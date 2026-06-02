@@ -1,4 +1,6 @@
-// lib/models/department_model.dart
+// models/models.dart
+
+// ─── DepartmentModel ──────────────────────────────────────────────────────────
 class DepartmentModel {
   final String departmentId;
   final String departmentName;
@@ -13,12 +15,21 @@ class DepartmentModel {
   }
 
   Map<String, dynamic> toMap() => {
-    'departmentId': departmentId,
-    'departmentName': departmentName,
-  };
+        'departmentId': departmentId,
+        'departmentName': departmentName,
+      };
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is DepartmentModel && other.departmentId == departmentId;
+  }
+
+  @override
+  int get hashCode => departmentId.hashCode;
 }
 
-// lib/models/notification_model.dart
+// ─── NotificationModel ────────────────────────────────────────────────────────
 class NotificationModel {
   final String notificationId;
   final String message;
@@ -48,21 +59,24 @@ class NotificationModel {
   }
 
   Map<String, dynamic> toMap() => {
-    'message': message,
-    'date': date,
-    'userId': userId,
-    'requestId': requestId,
-    'seen': seen,
-  };
+        'message': message,
+        'date': date,
+        'userId': userId,
+        'requestId': requestId,
+        'seen': seen,
+      };
 }
 
-// lib/models/message_model.dart
+// ─── MessageModel ─────────────────────────────────────────────────────────────
 class MessageModel {
   final String messageId;
   final String senderId;
   final String receiverId;
   final String message;
   final String timestamp;
+  final String senderName;
+  final String receiverName;
+  final bool isRead;
 
   MessageModel({
     required this.messageId,
@@ -70,6 +84,9 @@ class MessageModel {
     required this.receiverId,
     required this.message,
     required this.timestamp,
+    this.senderName = '',
+    this.receiverName = '',
+    this.isRead = false,
   });
 
   factory MessageModel.fromMap(Map<String, dynamic> map, String id) {
@@ -79,18 +96,24 @@ class MessageModel {
       receiverId: map['receiverId'] ?? '',
       message: map['message'] ?? '',
       timestamp: map['timestamp'] ?? '',
+      senderName: map['senderName'] ?? '',
+      receiverName: map['receiverName'] ?? '',
+      isRead: map['isRead'] ?? false,
     );
   }
 
   Map<String, dynamic> toMap() => {
-    'senderId': senderId,
-    'receiverId': receiverId,
-    'message': message,
-    'timestamp': timestamp,
-  };
+        'senderId': senderId,
+        'receiverId': receiverId,
+        'message': message,
+        'timestamp': timestamp,
+        'senderName': senderName,
+        'receiverName': receiverName,
+        'isRead': isRead,
+      };
 }
 
-// lib/models/activity_log_model.dart
+// ─── ActivityLogModel ─────────────────────────────────────────────────────────
 class ActivityLogModel {
   final String logId;
   final String action;
@@ -114,8 +137,8 @@ class ActivityLogModel {
   }
 
   Map<String, dynamic> toMap() => {
-    'action': action,
-    'userId': userId,
-    'timestamp': timestamp,
-  };
+        'action': action,
+        'userId': userId,
+        'timestamp': timestamp,
+      };
 }

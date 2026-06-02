@@ -20,7 +20,11 @@ class ContactStaffScreen extends StatefulWidget {
 
 class _ContactStaffScreenState extends State<ContactStaffScreen> {
   final _firestoreService = FirestoreService();
-  UserModel? _selectedStaff;
+
+  // Store the selected staff's userId string, NOT the UserModel object.
+  // This prevents the DropdownButton assertion crash when the stream rebuilds
+  // and emits new UserModel instances that are not identical by reference.
+  String? _selectedStaffId;
 
   @override
   Widget build(BuildContext context) {
@@ -33,72 +37,93 @@ class _ContactStaffScreenState extends State<ContactStaffScreen> {
         title: const Text(
           'Contact Staff',
           style: TextStyle(
-              color: AppColors.textDark,
-              fontSize: 20,
-              fontWeight: FontWeight.bold),
+            color: AppColors.textDark,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
-      body: Column(
-        children: [
-          // Staff selector
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: StreamBuilder<List<UserModel>>(
-              stream: _firestoreService.getStaffMembers(),
-              builder: (context, snapshot) {
-                final staff = snapshot.data ?? [];
-                if (staff.isEmpty) {
-                  return const Text('No staff members available.',
-                      style: TextStyle(color: Colors.black45));
-                }
+      body: StreamBuilder<List<UserModel>>(
+        stream: _firestoreService.getStaffMembers(),
+        builder: (context, snapshot) {
+          final staff = snapshot.data ?? [];
 
-                return Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.border),
+          // If the previously selected staff is no longer in the list, clear it.
+          if (_selectedStaffId != null &&
+              !staff.any((s) => s.userId == _selectedStaffId)) {
+            _selectedStaffId = null;
+          }
+
+          // Find the currently selected UserModel (or null).
+          final selectedStaff = staff.isEmpty
+              ? null
+              : staff.where((s) => s.userId == _selectedStaffId).firstOrNull;
+
+          return Column(
+            children: [
+              // ── Staff selector ──────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: staff.isEmpty
+                    ? const Text(
+                        'No staff members available.',
+                        style: TextStyle(color: Colors.black45),
+                      )
+                    : Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 16),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            isExpanded: true,
+                            hint: const Text(
+                                'Select a staff member to message'),
+                            // Value is a userId string — always unique & stable.
+                            value: _selectedStaffId,
+                            items: staff
+                                .map((s) => DropdownMenuItem<String>(
+                                      value: s.userId,
+                                      child: Text(s.name),
+                                    ))
+                                .toList(),
+                            onChanged: (id) =>
+                                setState(() => _selectedStaffId = id),
+                          ),
+                        ),
+                      ),
+              ),
+
+              // ── Chat area ───────────────────────────────────────────────
+              if (selectedStaff != null)
+                Expanded(
+                  child: _ChatView(
+                    staffMember: selectedStaff,
+                    service: _firestoreService,
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<UserModel>(
-                      isExpanded: true,
-                      hint: const Text('Select a staff member to message'),
-                      value: _selectedStaff,
-                      items: staff.map((s) => DropdownMenuItem(
-                            value: s,
-                            child: Text(s.name),
-                          )).toList(),
-                      onChanged: (s) => setState(() => _selectedStaff = s),
+                )
+              else
+                const Expanded(
+                  child: Center(
+                    child: EmptyState(
+                      message:
+                          'Select a staff member above to start chatting.',
                     ),
                   ),
-                );
-              },
-            ),
-          ),
-
-          // Chat area
-          if (_selectedStaff != null)
-            Expanded(
-              child: _ChatView(
-                staffMember: _selectedStaff!,
-                service: _firestoreService,
-              ),
-            )
-          else
-            const Expanded(
-              child: Center(
-                child: EmptyState(
-                  message: 'Select a staff member above to start chatting.',
                 ),
-              ),
-            ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
 }
 
-// The actual chat UI with real-time messages
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _ChatView extends StatefulWidget {
   final UserModel staffMember;
   final FirestoreService service;
@@ -127,7 +152,8 @@ class _ChatViewState extends State<_ChatView> {
     final user = context.read<UserProvider>().user;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please sign in again to send messages.')),
+        const SnackBar(
+            content: Text('Please sign in again to send messages.')),
       );
       return;
     }
@@ -138,16 +164,20 @@ class _ChatViewState extends State<_ChatView> {
       senderId: user.userId,
       receiverId: widget.staffMember.userId,
       message: text,
+      senderName: user.name,
+      receiverName: widget.staffMember.name, // ← pass staff name so inbox shows it
     );
 
     // Scroll to bottom after sending
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent + 100,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   @override
@@ -161,7 +191,7 @@ class _ChatViewState extends State<_ChatView> {
 
     return Column(
       children: [
-        // Staff info header
+        // ── Staff info header ──────────────────────────────────────────────
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           color: Colors.white,
@@ -178,7 +208,8 @@ class _ChatViewState extends State<_ChatView> {
                   child: Text(
                     _initials(widget.staffMember.name),
                     style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -186,30 +217,47 @@ class _ChatViewState extends State<_ChatView> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.staffMember.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const Text('Staff member',
-                      style: TextStyle(fontSize: 12, color: Colors.black45)),
+                  Text(
+                    widget.staffMember.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const Text(
+                    'Staff member',
+                    style: TextStyle(fontSize: 12, color: Colors.black45),
+                  ),
                 ],
               ),
             ],
           ),
         ),
 
-        // Messages list
+        // ── Messages list ──────────────────────────────────────────────────
         Expanded(
           child: StreamBuilder<List<MessageModel>>(
-            stream: widget.service.getMessages(
-                user.userId, widget.staffMember.userId),
+            stream: widget.service
+                .getMessages(user.userId, widget.staffMember.userId),
             builder: (context, snapshot) {
               final messages = snapshot.data ?? [];
 
               if (messages.isEmpty) {
                 return const Center(
-                  child: Text('No messages yet. Say hello!',
-                      style: TextStyle(color: Colors.black38)),
+                  child: Text(
+                    'No messages yet. Say hello!',
+                    style: TextStyle(color: Colors.black38),
+                  ),
                 );
               }
+
+              // Auto-scroll when new messages come in
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (_scrollController.hasClients) {
+                  _scrollController.animateTo(
+                    _scrollController.position.maxScrollExtent,
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOut,
+                  );
+                }
+              });
 
               return ListView.builder(
                 controller: _scrollController,
@@ -227,11 +275,16 @@ class _ChatViewState extends State<_ChatView> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 10),
                       constraints: BoxConstraints(
-                          maxWidth:
-                              MediaQuery.of(context).size.width * 0.7),
+                        maxWidth: MediaQuery.of(context).size.width * 0.7,
+                      ),
                       decoration: BoxDecoration(
                         color: isMe ? AppColors.primary : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.only(
+                          topLeft: const Radius.circular(16),
+                          topRight: const Radius.circular(16),
+                          bottomLeft: Radius.circular(isMe ? 16 : 4),
+                          bottomRight: Radius.circular(isMe ? 4 : 16),
+                        ),
                         border: isMe
                             ? null
                             : Border.all(color: AppColors.border),
@@ -239,7 +292,8 @@ class _ChatViewState extends State<_ChatView> {
                       child: Text(
                         msg.message,
                         style: TextStyle(
-                          color: isMe ? Colors.white : AppColors.textDark,
+                          color:
+                              isMe ? Colors.white : AppColors.textDark,
                           fontSize: 14,
                         ),
                       ),
@@ -251,15 +305,25 @@ class _ChatViewState extends State<_ChatView> {
           ),
         ),
 
-        // Message input
+        // ── Message input ──────────────────────────────────────────────────
         Container(
-          padding: const EdgeInsets.all(12),
-          color: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
           child: Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: _messageController,
+                  textCapitalization: TextCapitalization.sentences,
                   decoration: InputDecoration(
                     hintText: 'Type a message...',
                     filled: true,
@@ -267,11 +331,12 @@ class _ChatViewState extends State<_ChatView> {
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide:
+                          const BorderSide(color: AppColors.border),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(24),
                       borderSide:
                           const BorderSide(color: AppColors.primary),
                     ),
@@ -283,13 +348,17 @@ class _ChatViewState extends State<_ChatView> {
               GestureDetector(
                 onTap: _sendMessage,
                 child: Container(
-                  width: 46,
-                  height: 46,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(24),
                   ),
-                  child: const Icon(Icons.send, color: Colors.white, size: 20),
+                  child: const Icon(
+                    Icons.send_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
               ),
             ],

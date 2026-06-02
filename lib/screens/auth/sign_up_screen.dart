@@ -23,6 +23,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isLoading = false;
   String _errorMessage = '';
 
+  // visibility toggles
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+
   final AuthService _authService = AuthService();
 
   @override
@@ -88,6 +92,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       setState(() {
         _errorMessage = 'Registration failed. The email may already be in use.';
       });
+      debugPrint('🔥 Sign-up error: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -167,12 +172,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
               subtitle: "Create a strong password.",
               child: Column(
                 children: [
-                  _buildTextField("PASSWORD", "••••••••", _passwordController,
-                      isPassword: true),
+                  _buildTextField(
+                    "PASSWORD",
+                    "••••••••",
+                    _passwordController,
+                    isPassword: true,
+                    obscure: _obscurePassword,
+                    onToggleVisibility: () => setState(
+                        () => _obscurePassword = !_obscurePassword),
+                  ),
                   const SizedBox(height: 20),
-                  _buildTextField("CONFIRM PASSWORD", "••••••••",
-                      _confirmPasswordController,
-                      isPassword: true),
+                  _buildTextField(
+                    "CONFIRM PASSWORD",
+                    "••••••••",
+                    _confirmPasswordController,
+                    isPassword: true,
+                    obscure: _obscureConfirmPassword,
+                    onToggleVisibility: () => setState(() =>
+                        _obscureConfirmPassword = !_obscureConfirmPassword),
+                  ),
                   if (_errorMessage.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     Container(
@@ -232,6 +250,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     String hint,
     TextEditingController controller, {
     bool isPassword = false,
+    bool obscure = false,
+    VoidCallback? onToggleVisibility,
     TextInputType keyboardType = TextInputType.text,
   }) {
     return Column(
@@ -246,7 +266,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          obscureText: isPassword,
+          obscureText: isPassword ? obscure : false,
           keyboardType: keyboardType,
           decoration: InputDecoration(
             hintText: hint,
@@ -254,6 +274,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
             fillColor: Colors.white,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(
+                        obscure ? Icons.visibility_off : Icons.visibility,
+                        size: 20,
+                        color: Colors.black38),
+                    onPressed: onToggleVisibility,
+                  )
+                : null,
             enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide:

@@ -43,6 +43,23 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.arrow_back_ios_new,
+                          size: 16, color: AppColors.primary),
+                      SizedBox(width: 4),
+                      Text('Back',
+                          style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
                 const Text(
                   'UJ ISMS',
                   style: TextStyle(

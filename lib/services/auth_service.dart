@@ -1,10 +1,11 @@
-// lib/services/auth_service.dart
+// services/auth_service.dart
 // Handles all authentication with Firebase Auth
 // Also creates/reads the user document in Firestore
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
+import 'notification_service.dart';
 
 class AuthService {
   // Firebase instances
@@ -40,7 +41,10 @@ class AuthService {
 
       await _db.collection('users').doc(uid).set(newUser.toMap());
 
-      // 3. Log the sign-up action
+      // 3. Save FCM token so this device can receive push notifications
+      await NotificationService().saveTokenForUser(uid);
+
+      // 4. Log the sign-up action
       await _logActivity(uid, 'User signed up: $email');
 
       return newUser;
@@ -70,6 +74,9 @@ class AuthService {
       if (!doc.exists) return null;
 
       final user = UserModel.fromMap(doc.data()!, uid);
+
+      // Save / refresh FCM token so push notifications reach this device
+      await NotificationService().saveTokenForUser(uid);
 
       // Log the login action
       await _logActivity(uid, '${user.name} logged in');

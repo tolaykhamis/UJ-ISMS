@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../providers/user_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../models/request_model.dart';
@@ -22,6 +23,7 @@ class _ChooseDepartmentScreenState extends State<ChooseDepartmentScreen> {
   final _firestoreService = FirestoreService();
 
   DepartmentModel? _selectedDepartment;
+  PlatformFile? _attachedFile;
   String _selectedType = 'IT Support';
   String _selectedPriority = 'Normal';
   bool _isSubmitting = false;
@@ -62,22 +64,26 @@ class _ChooseDepartmentScreenState extends State<ChooseDepartmentScreen> {
     }
 
     try {
-      final id = await _firestoreService.submitRequest(RequestModel(
-        requestId: '',
-        description: _descController.text.trim(),
-        status: 'Pending',
-        priority: _selectedPriority,
-        date: DateTime.now().toIso8601String(),
-        departmentId: _selectedDepartment!.departmentId,
-        departmentName: _selectedDepartment!.departmentName,
-        requestType: _selectedType,
-        userId: user.userId,
-        userName: user.name,
-      ));
+      final id = await _firestoreService.submitRequest(
+        RequestModel(
+          requestId: '',
+          description: _descController.text.trim(),
+          status: 'Pending',
+          priority: _selectedPriority,
+          date: DateTime.now().toIso8601String(),
+          departmentId: _selectedDepartment!.departmentId,
+          departmentName: _selectedDepartment!.departmentName,
+          requestType: _selectedType,
+          userId: user.userId,
+          userName: user.name,
+        ),
+        attachment: _attachedFile,
+      );
 
       setState(() {
         _submitted = true;
         _generatedId = id;
+        _attachedFile = null;
       });
     } catch (e) {
       _showSnack('Failed to submit request. Please try again.');
@@ -89,6 +95,19 @@ class _ChooseDepartmentScreenState extends State<ChooseDepartmentScreen> {
   void _showSnack(String msg) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Future<void> _pickAttachment() async {
+    final result = await FilePicker.pickFiles(
+      allowMultiple: false,
+      type: FileType.any,
+      withData: true,
+    );
+    if (result == null) return;
+
+    setState(() {
+      _attachedFile = result.files.first;
+    });
   }
 
   @override
@@ -168,7 +187,9 @@ class _ChooseDepartmentScreenState extends State<ChooseDepartmentScreen> {
                 _submitted = false;
                 _descController.clear();
                 _selectedDepartment = null;
+                _selectedType = 'IT Support';
                 _selectedPriority = 'Normal';
+                _attachedFile = null;
               }),
             ),
           ],
@@ -306,31 +327,47 @@ class _ChooseDepartmentScreenState extends State<ChooseDepartmentScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Attachment placeholder
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: AppColors.border,
-                style: BorderStyle.solid,
-              ),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.attach_file, color: AppColors.primary),
-                SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Attach a File (Optional)',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('Firebase Storage integration',
-                        style: TextStyle(fontSize: 12, color: Colors.black38)),
-                  ],
+          GestureDetector(
+            onTap: _pickAttachment,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: AppColors.border,
+                  style: BorderStyle.solid,
                 ),
-              ],
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.attach_file, color: AppColors.primary),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _attachedFile?.name ?? 'Attach a file or photo (Optional)',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _attachedFile == null
+                              ? 'Tap to choose from device storage.'
+                              : 'Tap to replace the selected attachment.',
+                          style: const TextStyle(fontSize: 12, color: Colors.black38),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_attachedFile != null)
+                    IconButton(
+                      icon: const Icon(Icons.close, color: AppColors.textMid),
+                      onPressed: () => setState(() => _attachedFile = null),
+                    ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 24),

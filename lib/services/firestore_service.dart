@@ -1,14 +1,27 @@
-// lib/services/firestore_service.dart
+// services/firestore_service.dart
 // All Firestore database operations are here.
 // The screens call these methods — no Firestore code in the screens.
 
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
 import '../models/request_model.dart';
 import '../models/models.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ⚠️  FCM SERVER KEY
+  // Get this from: Firebase Console → Project Settings → Cloud Messaging
+  // → "Cloud Messaging API (Legacy)" → Server key
+  // If the Legacy API is disabled, enable it in Firebase Console first.
+  // ══════════════════════════════════════════════════════════════════════════
+  static const String _fcmServerKey = 'YOUR_FCM_SERVER_KEY_HERE';
 
   // ═══════════════════════════════════════════════════════════════════════════
   // USERS
@@ -75,10 +88,14 @@ class FirestoreService {
     return _db
         .collection('requests')
         .where('userId', isEqualTo: userId)
-        .orderBy('date', descending: true)
         .snapshots()
-        .map((snap) =>
-            snap.docs.map((d) => RequestModel.fromMap(d.data(), d.id)).toList());
+        .map((snap) {
+          final requests = snap.docs
+              .map((d) => RequestModel.fromMap(d.data(), d.id))
+              .toList();
+          requests.sort((a, b) => b.date.compareTo(a.date));
+          return requests;
+        });
   }
 
   // Get all requests (admin/staff view)
@@ -102,8 +119,14 @@ class FirestoreService {
   }
 
   // Submit a new request
-  Future<String> submitRequest(RequestModel request) async {
+  Future<String> submitRequest(RequestModel request, {PlatformFile? attachment}) async {
     final ref = _db.collection('requests').doc();
+
+    String? attachmentUrl;
+    if (attachment != null) {
+      attachmentUrl = await uploadAttachment(requestId: ref.id, file: attachment);
+    }
+
     final model = RequestModel(
       requestId: ref.id,
       description: request.description,
@@ -115,6 +138,7 @@ class FirestoreService {
       requestType: request.requestType,
       userId: request.userId,
       userName: request.userName,
+      attachmentUrl: attachmentUrl,
     );
     await ref.set(model.toMap());
 
@@ -127,6 +151,18 @@ class FirestoreService {
 
     await _logActivity(request.userId, 'Request submitted: ${ref.id}');
     return ref.id;
+  }
+
+  Future<String> uploadAttachment({
+    required String requestId,
+    required PlatformFile file,
+  }) async {
+    final ref = FirebaseStorage.instance
+        .ref('request_attachments/$requestId/${file.name}');
+
+    final uploadTask = ref.putData(file.bytes!);
+    final snapshot = await uploadTask;
+    return await snapshot.ref.getDownloadURL();
   }
 
   // Update a request's status
@@ -180,12 +216,33 @@ class FirestoreService {
     required String newStaffId,
     required String newStaffName,
     required String reason,
+    required String currentStaffName,
   }) async {
     await _db.collection('requests').doc(requestId).update({
       'assignedStaffId': newStaffId,
       'assignedStaffName': newStaffName,
     });
+
+    // Create notification for the receiving staff member
+    await addNotification(
+      userId: newStaffId,
+      message: '$currentStaffName forwarded you a request: "$reason"',
+      requestId: requestId,
+    );
+
     await _logActivity(newStaffId, 'Request $requestId forwarded. Reason: $reason');
+  }
+
+  // Assign a staff member to a request (Student use — from Choose Staff tab)
+  Future<void> assignStaffToRequest({
+    required String requestId,
+    required String staffId,
+    required String staffName,
+  }) async {
+    await _db.collection('requests').doc(requestId).update({
+      'assignedStaffId': staffId,
+      'assignedStaffName': staffName,
+    });
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -197,11 +254,14 @@ class FirestoreService {
     return _db
         .collection('notifications')
         .where('userId', isEqualTo: userId)
-        .orderBy('date', descending: true)
         .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => NotificationModel.fromMap(d.data(), d.id))
-            .toList());
+        .map((snap) {
+          final notifications = snap.docs
+              .map((d) => NotificationModel.fromMap(d.data(), d.id))
+              .toList();
+          notifications.sort((a, b) => b.date.compareTo(a.date));
+          return notifications;
+        });
   }
 
   // Create a new notification
@@ -224,39 +284,148 @@ class FirestoreService {
     await _db.collection('notifications').doc(notifId).update({'seen': true});
   }
 
+  /// Fetch a single request by its document ID.
+  /// Used by NotificationsScreen to navigate to the request on tap.
+  Future<RequestModel?> getRequestById(String requestId) async {
+    final doc = await _db.collection('requests').doc(requestId).get();
+    if (!doc.exists) return null;
+    return RequestModel.fromMap(doc.data()!, doc.id);
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // MESSAGES (Chat)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  // Get messages between two users as a stream
+  /// Get all messages between two specific users (both directions).
+  /// Used in the chat view for both employee and staff sides.
   Stream<List<MessageModel>> getMessages(String userId, String staffId) {
-    // We store messages and fetch both directions
     return _db
         .collection('messages')
         .where('participants', arrayContains: userId)
-        .orderBy('timestamp')
         .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => MessageModel.fromMap(d.data(), d.id))
-            .where((m) =>
-                (m.senderId == userId && m.receiverId == staffId) ||
-                (m.senderId == staffId && m.receiverId == userId))
-            .toList());
+        .map((snap) {
+          final messages = snap.docs
+              .map((d) => MessageModel.fromMap(d.data(), d.id))
+              .where((m) =>
+                  (m.senderId == userId && m.receiverId == staffId) ||
+                  (m.senderId == staffId && m.receiverId == userId))
+              .toList();
+          // Sort ascending so oldest messages appear at the top
+          messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+          return messages;
+        });
   }
 
-  // Send a message
+  /// Get ALL messages where the staff member is a participant.
+  /// Used in StaffMessagesScreen to build the conversation inbox list.
+  Stream<List<MessageModel>> getMessagesForStaff(String staffId) {
+    return _db
+        .collection('messages')
+        .where('participants', arrayContains: staffId)
+        .snapshots()
+        .map((snap) {
+          final messages = snap.docs
+              .map((d) => MessageModel.fromMap(d.data(), d.id))
+              .toList();
+          // Sort ascending so latest message per conversation is last
+          messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+          return messages;
+        });
+  }
+
+  /// Send a message from one user to another.
+  /// Also creates an in-app notification AND sends an FCM push to the receiver.
   Future<void> sendMessage({
     required String senderId,
     required String receiverId,
     required String message,
+    required String senderName,
+    String receiverName = '',
   }) async {
+    // 1. Save message document to Firestore
     await _db.collection('messages').add({
       'senderId': senderId,
       'receiverId': receiverId,
       'message': message,
       'timestamp': DateTime.now().toIso8601String(),
-      'participants': [senderId, receiverId], // for easy querying
+      'participants': [senderId, receiverId],
+      'senderName': senderName,
+      'receiverName': receiverName,
+      'isRead': false,
     });
+
+    // 2. Create in-app Firestore notification for the receiver
+    await addNotification(
+      userId: receiverId,
+      message: 'New message from $senderName: "$message"',
+      requestId: '',
+    );
+
+    // 3. Send FCM push notification to receiver's device
+    await _sendFcmPush(
+      receiverId: receiverId,
+      title: 'New Message from $senderName',
+      body: message,
+    );
+  }
+
+  /// Mark a message as read (call when staff opens a conversation)
+  Future<void> markMessageRead(String messageId) async {
+    await _db.collection('messages').doc(messageId).update({'isRead': true});
+  }
+
+  // ─── Private: send FCM push via Legacy HTTP API ───────────────────────────
+  Future<void> _sendFcmPush({
+    required String receiverId,
+    required String title,
+    required String body,
+  }) async {
+    try {
+      // Look up the receiver's FCM token from Firestore
+      final userDoc = await _db.collection('users').doc(receiverId).get();
+      final token = userDoc.data()?['fcmToken'] as String?;
+
+      if (token == null || token.isEmpty) {
+        debugPrint('No FCM token for user $receiverId — skipping push');
+        return;
+      }
+
+      final response = await http.post(
+        Uri.parse('https://fcm.googleapis.com/fcm/send'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'key=$_fcmServerKey',
+        },
+        body: jsonEncode({
+          'to': token,
+          'notification': {
+            'title': title,
+            'body': body,
+            'sound': 'default',
+          },
+          'android': {
+            'priority': 'high',
+            'notification': {
+              'channel_id': 'uj_isms_messages',
+              'sound': 'default',
+            },
+          },
+          'apns': {
+            'payload': {
+              'aps': {'sound': 'default'},
+            },
+          },
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('FCM push sent to $receiverId');
+      } else {
+        debugPrint('FCM push failed (${response.statusCode}): ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('FCM push error: $e');
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -283,7 +452,8 @@ class FirestoreService {
         .collection('users')
         .where('role', isEqualTo: 'Staff')
         .snapshots()
-        .map((snap) => snap.docs.map((d) => UserModel.fromMap(d.data(), d.id)).toList());
+        .map((snap) =>
+            snap.docs.map((d) => UserModel.fromMap(d.data(), d.id)).toList());
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -336,10 +506,6 @@ class FirestoreService {
     await _db.collection('processes').doc(processId).delete();
     await _logActivity(adminId, 'Process $processId deleted');
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // PRIVATE HELPER
-  // ═══════════════════════════════════════════════════════════════════════════
 
   Future<void> _logActivity(String userId, String action) async {
     await _db.collection('activity_logs').add({
