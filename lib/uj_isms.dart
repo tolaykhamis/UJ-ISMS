@@ -116,7 +116,7 @@ class _UjIsmsShellState extends State<UjIsmsShell> {
 
       default: // Student
         return [
-          _TabItem('Home',        Icons.home_outlined,      const StudentHomeScreen()),
+          _TabItem('Home',        Icons.home_outlined,       StudentHomeScreen(onTabSwitch: switchTab)),
           _TabItem('Departments', Icons.apartment_outlined, const ChooseDepartmentScreen()),
           _TabItem('Requests',    Icons.list_alt_outlined,  const RequestHistoryScreen()),
           _TabItem('Staff',       Icons.badge_outlined,     const ChooseStaffScreen()),

@@ -1,12 +1,12 @@
 // screens/staff/assigned_requests_screen.dart
-// Staff home — notifications tile with red dot for unseen notifications.
+// Staff home — notifications added as a list tile at the top.
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../models/request_model.dart';
-import '../../models/models.dart';
+import '../../models/models.dart';                        // ← for NotificationModel
 import '../../constants/app_colors.dart';
 import '../../widgets/app_widgets.dart';
 import 'forward_request_screen.dart';
@@ -57,7 +57,7 @@ class _AssignedRequestsScreenState extends State<AssignedRequestsScreen> {
       ),
       body: Column(
         children: [
-          // ── Notifications tile with red dot ──────────────────────────────
+          // ── Notifications tile with red dot ───────────────────────────────
           StreamBuilder<List<NotificationModel>>(
             stream: _firestoreService.getUserNotifications(user.userId),
             builder: (context, notifSnap) {
@@ -75,8 +75,8 @@ class _AssignedRequestsScreenState extends State<AssignedRequestsScreen> {
                     ),
                   ),
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
@@ -84,17 +84,19 @@ class _AssignedRequestsScreenState extends State<AssignedRequestsScreen> {
                     ),
                     child: Row(
                       children: [
+                        // Bell icon with red dot
                         Stack(
+                          clipBehavior: Clip.none,
                           children: [
                             const Icon(Icons.notifications_outlined,
                                 color: AppColors.primary, size: 22),
                             if (unseen > 0)
                               Positioned(
-                                right: 0,
-                                top: 0,
+                                right: -2,
+                                top: -2,
                                 child: Container(
-                                  width: 7,
-                                  height: 7,
+                                  width: 8,
+                                  height: 8,
                                   decoration: const BoxDecoration(
                                     color: Colors.red,
                                     shape: BoxShape.circle,
@@ -122,7 +124,7 @@ class _AssignedRequestsScreenState extends State<AssignedRequestsScreen> {
             },
           ),
 
-          // ── Messages tile ────────────────────────────────────────────────
+          // ── Messages tile ─────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: GestureDetector(
@@ -161,8 +163,59 @@ class _AssignedRequestsScreenState extends State<AssignedRequestsScreen> {
             ),
           ),
 
-          // The rest of the screen (filter chips + request list) is unchanged
-          // — keep your existing filter chips and StreamBuilder<List<RequestModel>> below here
+          // ── Filter chips ──────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: FilterChips(
+              options: _filters,
+              selected: _filter,
+              onSelected: (f) => setState(() => _filter = f),
+            ),
+          ),
+
+          // ── Request list ──────────────────────────────────────────────────
+          Expanded(
+            child: StreamBuilder<List<RequestModel>>(
+              stream: _firestoreService.getStaffRequests(user.userId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                var requests = snapshot.data ?? [];
+                if (_filter == 'Urgent') {
+                  requests =
+                      requests.where((r) => r.priority == 'Urgent').toList();
+                } else if (_filter != 'All') {
+                  requests =
+                      requests.where((r) => r.status == _filter).toList();
+                }
+
+                if (requests.isEmpty) {
+                  return const EmptyState(
+                      message: 'No assigned requests found.');
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: requests.length,
+                  itemBuilder: (context, i) {
+                    final r = requests[i];
+                    return RequestCard(
+                      requestId: r.requestId,
+                      requestType: r.requestType,
+                      department: r.departmentName,
+                      status: r.status,
+                      priority: r.priority,
+                      date: r.date.substring(0, 10),
+                      assignedStaff: r.assignedStaffName,
+                      onTap: () {},
+                    );
+                  },
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
