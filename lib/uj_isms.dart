@@ -1,34 +1,28 @@
-// uj_isms.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/user_provider.dart';
 import 'constants/app_colors.dart';
 
-// Student
 import 'screens/student/student_home_screen.dart';
 import 'screens/student/choose_department_screen.dart';
 import 'screens/student/request_history_screen.dart';
 import 'screens/student/choose_staff_screen.dart';
 
-// Employee
 import 'screens/employee/employee_home_screen.dart';
 import 'screens/employee/contact_staff_screen.dart';
 
-// Staff
 import 'screens/staff/assigned_requests_screen.dart';
 import 'screens/staff/update_status_screen.dart';
 import 'screens/staff/manage_priorities_screen.dart';
 import 'screens/staff/staff_reports_screen.dart';
 import 'screens/staff/staff_messages_screen.dart';
 
-// Admin
 import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/admin/manage_users_screen.dart';
 import 'screens/admin/manage_departments_screen.dart';
 import 'screens/admin/activity_log_screen.dart';
 
-// Shared
 import 'screens/shared/profile_screen.dart';
 
 class UjIsmsShell extends StatefulWidget {
@@ -41,7 +35,6 @@ class UjIsmsShell extends StatefulWidget {
 class _UjIsmsShellState extends State<UjIsmsShell> {
   int _currentIndex = 0;
 
-  /// Called from dashboard cards to switch to a tab by index.
   void switchTab(int index) => setState(() => _currentIndex = index);
 
   @override
@@ -78,15 +71,10 @@ class _UjIsmsShellState extends State<UjIsmsShell> {
     switch (role) {
       case 'Employee':
         return [
-          // index 0 → Home  (pass switchTab so cards can navigate)
           _TabItem('Home',        Icons.home_outlined,       EmployeeHomeScreen(onTabSwitch: switchTab)),
-          // index 1 → Departments
           _TabItem('Departments', Icons.apartment_outlined,  const ChooseDepartmentScreen()),
-          // index 2 → Requests
           _TabItem('Requests',    Icons.list_alt_outlined,   const RequestHistoryScreen()),
-          // index 3 → Contact
           _TabItem('Contact',     Icons.chat_bubble_outline, const ContactStaffScreen()),
-          // index 4 → Profile
           _TabItem('Profile',     Icons.person_outline,      const ProfileScreen()),
         ];
 
@@ -102,19 +90,14 @@ class _UjIsmsShellState extends State<UjIsmsShell> {
 
       case 'Admin':
         return [
-          // index 0 → Dashboard
           _TabItem('Dashboard',   Icons.dashboard_outlined, AdminDashboardScreen(onSwitchTab: switchTab)),
-          // index 1 → Users
           _TabItem('Users',       Icons.people_outlined,    const ManageUsersScreen()),
-          // index 2 → Departments
           _TabItem('Departments', Icons.apartment_outlined, const ManageDepartmentsScreen()),
-          // index 3 → Activity
           _TabItem('Activity',    Icons.history_outlined,   const ActivityLogScreen()),
-          // index 4 → Profile
           _TabItem('Profile',     Icons.person_outline,     const ProfileScreen()),
         ];
 
-      default: // Student
+      default:
         return [
           _TabItem('Home',        Icons.home_outlined,       StudentHomeScreen(onTabSwitch: switchTab)),
           _TabItem('Departments', Icons.apartment_outlined, const ChooseDepartmentScreen()),
