@@ -10,6 +10,7 @@ import 'screens/auth/sign_up_screen.dart';
 import 'uj_isms.dart';
 import 'first_page.dart';
 
+
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
