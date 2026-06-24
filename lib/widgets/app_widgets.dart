@@ -1,13 +1,6 @@
-// lib/widgets/app_widgets.dart
-// All reusable widgets for UJ ISMS in one file.
-// Import this file in any screen that needs shared UI components.
-
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// GRADIENT BUTTON — the main teal button used across the app
-// ═══════════════════════════════════════════════════════════════════════════
 class GradientButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
@@ -53,9 +46,6 @@ class GradientButton extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// STATUS BADGE — coloured pill for request status
-// ═══════════════════════════════════════════════════════════════════════════
 class StatusBadge extends StatelessWidget {
   final String status;
 
@@ -71,16 +61,13 @@ class StatusBadge extends StatelessWidget {
         bg = AppColors.inProgress; text = AppColors.inProgressText; break;
       case 'Completed':
         bg = AppColors.completed; text = AppColors.completedText; break;
-      default: // Cancelled
+      default:
         bg = AppColors.cancelled; text = AppColors.cancelledText;
     }
     return _BadgePill(label: status, bg: bg, textColor: text);
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PRIORITY BADGE — coloured pill for request priority
-// ═══════════════════════════════════════════════════════════════════════════
 class PriorityBadge extends StatelessWidget {
   final String priority;
 
@@ -94,14 +81,13 @@ class PriorityBadge extends StatelessWidget {
         bg = AppColors.urgent; text = AppColors.urgentText; break;
       case 'High':
         bg = AppColors.high; text = AppColors.highText; break;
-      default: // Normal
+      default:
         bg = AppColors.normal; text = AppColors.normalText;
     }
     return _BadgePill(label: priority, bg: bg, textColor: text);
   }
 }
 
-// Shared internal pill widget
 class _BadgePill extends StatelessWidget {
   final String label;
   final Color bg, textColor;
@@ -128,9 +114,6 @@ class _BadgePill extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// HERO CARD — welcome card at top of dashboard screens
-// ═══════════════════════════════════════════════════════════════════════════
 class HeroCard extends StatelessWidget {
   final String name;
   final String subtitle;
@@ -159,7 +142,6 @@ class HeroCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Mini UJ badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
@@ -195,9 +177,6 @@ class HeroCard extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// DASHBOARD CARD — action card with icon, title, subtitle
-// ═══════════════════════════════════════════════════════════════════════════
 class DashboardCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -230,7 +209,6 @@ class DashboardCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Icon circle
             Container(
               width: 44,
               height: 44,
@@ -245,7 +223,6 @@ class DashboardCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 14),
-            // Text
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,9 +254,6 @@ class DashboardCard extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// REQUEST CARD — shows a single request summary in lists
-// ═══════════════════════════════════════════════════════════════════════════
 class RequestCard extends StatelessWidget {
   final String requestId;
   final String requestType;
@@ -320,7 +294,6 @@ class RequestCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top row: ID + priority badge
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -343,7 +316,6 @@ class RequestCard extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
             const SizedBox(height: 10),
-            // Status + date row
             Row(
               children: [
                 StatusBadge(status: status),
@@ -352,7 +324,6 @@ class RequestCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            // Assigned staff
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -371,9 +342,6 @@ class RequestCard extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SUMMARY STATS ROW — shows 3 mini stat cards (Pending / In Progress / Urgent)
-// ═══════════════════════════════════════════════════════════════════════════
 class SummaryStatsRow extends StatelessWidget {
   final int pending;
   final int inProgress;
@@ -433,9 +401,6 @@ class _MiniStat extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// STATUS FILTER CHIPS — horizontal row of filter buttons
-// ═══════════════════════════════════════════════════════════════════════════
 class FilterChips extends StatelessWidget {
   final List<String> options;
   final String selected;
@@ -485,9 +450,6 @@ class FilterChips extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SECTION LABEL — small uppercase label above groups of content
-// ═══════════════════════════════════════════════════════════════════════════
 class SectionLabel extends StatelessWidget {
   final String text;
   const SectionLabel(this.text, {super.key});
@@ -509,9 +471,6 @@ class SectionLabel extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// EMPTY STATE — shown when no items are found
-// ═══════════════════════════════════════════════════════════════════════════
 class EmptyState extends StatelessWidget {
   final String message;
   const EmptyState({super.key, this.message = 'No items found'});
@@ -537,9 +496,6 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LOGOUT DIALOG — confirmation before logging out
-// ═══════════════════════════════════════════════════════════════════════════
 class LogoutDialog extends StatelessWidget {
   final VoidCallback onConfirm;
   const LogoutDialog({super.key, required this.onConfirm});
@@ -578,9 +534,6 @@ class LogoutDialog extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// AVAILABILITY BADGE — for staff availability status
-// ═══════════════════════════════════════════════════════════════════════════
 class AvailabilityBadge extends StatelessWidget {
   final String status;
   const AvailabilityBadge({super.key, required this.status});
