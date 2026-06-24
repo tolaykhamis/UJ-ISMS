@@ -1,6 +1,3 @@
-// models/models.dart
-
-// ─── DepartmentModel ──────────────────────────────────────────────────────────
 class DepartmentModel {
   final String departmentId;
   final String departmentName;
@@ -29,7 +26,6 @@ class DepartmentModel {
   int get hashCode => departmentId.hashCode;
 }
 
-// ─── NotificationModel ────────────────────────────────────────────────────────
 class NotificationModel {
   final String notificationId;
   final String message;
@@ -67,7 +63,6 @@ class NotificationModel {
       };
 }
 
-// ─── MessageModel ─────────────────────────────────────────────────────────────
 class MessageModel {
   final String messageId;
   final String senderId;
@@ -113,7 +108,6 @@ class MessageModel {
       };
 }
 
-// ─── ActivityLogModel ─────────────────────────────────────────────────────────
 class ActivityLogModel {
   final String logId;
   final String action;
