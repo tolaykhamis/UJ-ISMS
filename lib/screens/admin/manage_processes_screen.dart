@@ -1,7 +1,3 @@
-// screens/admin/manage_processes_screen.dart
-// Admin can add, edit, and delete processes (services within departments).
-// Each process is linked to a department.
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -29,14 +25,12 @@ class _ManageProcessesScreenState extends State<ManageProcessesScreen> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // ── Header ──────────────────────────────────────────────────────────
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(20, 56, 20, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // iOS back button
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: const Row(
@@ -78,7 +72,6 @@ class _ManageProcessesScreenState extends State<ManageProcessesScreen> {
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 16),
-                // Add process button
                 GradientButton(
                   label: '+ Add New Process',
                   onPressed: () => _showAddEditDialog(context, user.userId),
@@ -86,8 +79,6 @@ class _ManageProcessesScreenState extends State<ManageProcessesScreen> {
               ],
             ),
           ),
-
-          // ── Process list ─────────────────────────────────────────────────────
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: _db.getProcesses(),
@@ -131,8 +122,6 @@ class _ManageProcessesScreenState extends State<ManageProcessesScreen> {
     );
   }
 
-  // ── Add / Edit dialog ──────────────────────────────────────────────────────
-
   void _showAddEditDialog(
     BuildContext context,
     String adminId, {
@@ -140,8 +129,6 @@ class _ManageProcessesScreenState extends State<ManageProcessesScreen> {
   }) {
     final isEdit = process != null;
     final nameCtrl = TextEditingController(text: isEdit ? process['processName'] : '');
-
-    // We'll pick the department from available ones in Firestore
     String? selectedDeptId = isEdit ? process['departmentId'] : null;
 
     showDialog(
@@ -158,7 +145,6 @@ class _ManageProcessesScreenState extends State<ManageProcessesScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Process name
                 const Text(
                   'PROCESS NAME',
                   style: TextStyle(
@@ -186,8 +172,6 @@ class _ManageProcessesScreenState extends State<ManageProcessesScreen> {
                 ),
 
                 const SizedBox(height: 16),
-
-                // Department picker (from Firestore)
                 const Text(
                   'DEPARTMENT',
                   style: TextStyle(
@@ -282,8 +266,6 @@ class _ManageProcessesScreenState extends State<ManageProcessesScreen> {
     );
   }
 
-  // ── Delete confirmation ────────────────────────────────────────────────────
-
   void _confirmDelete(
     BuildContext context,
     Map<String, dynamic> process,
@@ -339,8 +321,6 @@ class _ManageProcessesScreenState extends State<ManageProcessesScreen> {
   }
 }
 
-// ── Process card widget ───────────────────────────────────────────────────────
-
 class _ProcessCard extends StatelessWidget {
   final Map<String, dynamic> process;
   final VoidCallback onEdit;
@@ -371,7 +351,6 @@ class _ProcessCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Icon
           Container(
             width: 44,
             height: 44,
@@ -407,15 +386,11 @@ class _ProcessCard extends StatelessWidget {
               ],
             ),
           ),
-
-          // Edit button
           IconButton(
             onPressed: onEdit,
             icon: const Icon(Icons.edit_outlined, color: AppColors.secondary),
             tooltip: 'Edit',
           ),
-
-          // Delete button
           IconButton(
             onPressed: onDelete,
             icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
