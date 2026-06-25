@@ -1,6 +1,5 @@
 // lib/screens/admin/manage_departments_screen.dart
-// Admin can add, edit, and delete departments.
-
+//Admin can add edit and delete departments
 import 'package:flutter/material.dart';
 import '../../services/firestore_service.dart';
 import '../../models/models.dart';
@@ -26,7 +25,6 @@ class ManageDepartmentsScreen extends StatelessWidget {
                 fontSize: 20,
                 fontWeight: FontWeight.bold)),
         actions: [
-          // Add department button
           IconButton(
             icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
             onPressed: () => _showAddDialog(context, service),
