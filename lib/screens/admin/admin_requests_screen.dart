@@ -1,7 +1,4 @@
-// screens/admin/admin_requests_screen.dart
-// Admin can see all requests with NEW badges for unseen ones.
-// Filters: All, Seen, Unseen, Pending, On Progress, Urgent.
-// Admin can mark a request as seen.
+
 
 import 'package:flutter/material.dart';
 
@@ -36,7 +33,6 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // ── Header ──────────────────────────────────────────────────────────
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(20, 56, 20, 20),
@@ -86,8 +82,6 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
               ],
             ),
           ),
-
-          // ── Filter chips ─────────────────────────────────────────────────────
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -97,8 +91,6 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
               onSelected: (f) => setState(() => _filter = f),
             ),
           ),
-
-          // ── Request list ─────────────────────────────────────────────────────
           Expanded(
             child: StreamBuilder<List<RequestModel>>(
               stream: _db.getAllRequests(),
@@ -111,8 +103,6 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
                 }
 
                 final all = snap.data ?? [];
-
-                // Apply filter
                 final shown = all.where((r) {
                   switch (_filter) {
                     case 'Seen':
@@ -152,8 +142,6 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
       ),
     );
   }
-
-  // Show a bottom sheet with request details
   void _showRequestDetails(RequestModel r) {
     showModalBottomSheet(
       context: context,
@@ -164,7 +152,6 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
   }
 }
 
-// ── Request card with NEW badge ──────────────────────────────────────────────
 
 class _AdminRequestCard extends StatelessWidget {
   final RequestModel request;
@@ -203,7 +190,6 @@ class _AdminRequestCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Request ID + NEW badge + Priority
             Row(
               children: [
                 Expanded(
@@ -242,21 +228,15 @@ class _AdminRequestCard extends StatelessWidget {
             ),
 
             const SizedBox(height: 6),
-
-            // Department and date
             Text(
               '${request.departmentId}  ·  ${request.date}',
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
 
             const SizedBox(height: 12),
-
-            // Status badge
             StatusBadge(status: request.status),
 
             const SizedBox(height: 14),
-
-            // Action buttons
             Row(
               children: [
                 Expanded(
@@ -399,8 +379,6 @@ class _RequestDetailsSheet extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
-
-            // Mark seen button (if not seen)
             if (!request.seen)
               GradientButton(
                 label: 'Mark as Seen',
