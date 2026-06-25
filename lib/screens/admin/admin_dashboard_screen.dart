@@ -12,8 +12,6 @@ import 'system_reports_screen.dart';
 import '../student/notifications_screen.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
-  /// Called when the user taps a card that maps to a bottom-nav tab.
-  /// index: 1=Users, 2=Departments, 3=Activity, 4=Profile
   final void Function(int index)? onSwitchTab;
 
   const AdminDashboardScreen({super.key, this.onSwitchTab});
@@ -42,7 +40,6 @@ class AdminDashboardScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Header ──────────────────────────────────────────────
                   const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -68,8 +65,6 @@ class AdminDashboardScreen extends StatelessWidget {
                     badge: 'Admin',
                   ),
                   const SizedBox(height: 16),
-
-                  // ── Stats grid ───────────────────────────────────────────
                   GridView.count(
                     crossAxisCount: 2,
                     shrinkWrap: true,
@@ -85,8 +80,6 @@ class AdminDashboardScreen extends StatelessWidget {
                           highlight: urgent > 0),
                     ],
                   ),
-
-                  // ── Unseen banner ────────────────────────────────────────
                   if (unseen > 0) ...[
                     const SizedBox(height: 12),
                     Container(
@@ -116,7 +109,6 @@ class AdminDashboardScreen extends StatelessWidget {
 
                   const SectionLabel('Management'),
 
-                  // ── Manage Users → switches to Users tab (index 1) ───────
                   DashboardCard(
                     title: 'Manage Users',
                     subtitle: 'Create, update, and assign roles',
@@ -126,7 +118,6 @@ class AdminDashboardScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
 
-                  // ── Manage Departments → switches to Departments tab (index 2)
                   DashboardCard(
                     title: 'Manage Departments',
                     subtitle: 'Add, edit, and delete departments',
@@ -135,7 +126,6 @@ class AdminDashboardScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
 
-                  // ── Manage Processes → pushes a new page ─────────────────
                   DashboardCard(
                     title: 'Manage Processes',
                     subtitle: 'Add processes linked to departments',
@@ -148,7 +138,6 @@ class AdminDashboardScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
 
-                  // ── Seen / Unseen Requests → pushes a new page ───────────
                   DashboardCard(
                     title: 'Seen / Unseen Requests',
                     subtitle: 'Review new and unseen requests',
@@ -161,7 +150,6 @@ class AdminDashboardScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
 
-                  // ── Monitor Activity → switches to Activity tab (index 3) ─
                   DashboardCard(
                     title: 'Monitor Activity',
                     subtitle: 'View login times and system changes',
@@ -170,7 +158,6 @@ class AdminDashboardScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
 
-                  // ── System Reports → pushes a new page ───────────────────
                   DashboardCard(
                     title: 'System Reports',
                     subtitle: 'Generate and download reports',
@@ -182,8 +169,6 @@ class AdminDashboardScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-
-                  // ── Notifications tile ────────────────────────────────────
                   GestureDetector(
                     onTap: () => Navigator.push(
                       context,
